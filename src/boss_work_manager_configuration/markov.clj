@@ -1,4 +1,5 @@
-(ns boss-work-manager-configuration.markov)
+(ns boss-work-manager-configuration.markov
+  (:require [clojure.string :as s]))
 
 (defn invalid-token-pair?
   "Returns true if the given token pair ends with a start token or starts with
@@ -30,7 +31,7 @@
   => {\"a\" 1/4
       \"b\" 3/4
       \"c\" 4/4}"
-  [trans]
+  [model]
   (loop [trans (seq model)
          ctrans (sorted-map)
          total 0]
@@ -77,15 +78,6 @@
        (remove (partial = ":end"))
        (apply hash-set)))
 
-(defn amuse-me [path sep n]
-  (with-open [r (clojure.java.io/reader path)]
-    (let [tokens (line-seq r)
-          existing-token? (chains tokens)
-          model (mk-markov tokens)]
-      (->> (repeatedly #(markov-chain model sep))
-           (filter (complement existing-token?))
-           (take n)))))
-
 (defn real-or-not [path sep n]
   (with-open [r (clojure.java.io/reader path)]
     (let [tokens (line-seq r)
@@ -101,3 +93,6 @@
                 fakes
                 fakes2)
            (take n)))))
+
+(comment
+  (def class-name-tokens (line-seq (clojure.java.io/reader "class-names"))))
