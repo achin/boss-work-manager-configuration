@@ -21,10 +21,8 @@ To run the web application:
 To build the [class name data
 file](https://github.com/achin/boss-work-manager-configuration/blob/master/resources/class-names):
 
-* Use [JELDoclet](http://jeldoclet.sourceforge.net/) to generate a big XML
-* document Use the tools in the `boss-work-manager-configuration.ingest` and
-* `boss-work-manager-configuration.ingest.jeldoclet` namespaces to create
-* a token file
+* Use [JELDoclet](http://jeldoclet.sourceforge.net/) to generate a big XML document
+* Use the tools in the `boss-work-manager-configuration.ingest` and `boss-work-manager-configuration.ingest.jeldoclet` namespaces to create a token file
 
 Examples are available in the `resources/` directory.
 
