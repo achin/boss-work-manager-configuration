@@ -37,7 +37,10 @@
         (wrap-data {::model model ::real-chains real-chains}))))
 
 (defn run-web-app
-  []
+  [port]
   (jetty/run-jetty (web-app "resources/class-names")
-                   {:port 8080
+                   {:port port
                     :join? false}))
+
+(defn -main [port]
+  (run-web-app (Integer. port)))
