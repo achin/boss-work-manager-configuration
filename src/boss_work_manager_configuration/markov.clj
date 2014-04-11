@@ -6,7 +6,7 @@
   an end token."
   [[a b]] (or (= ":start" b) (= ":end" a)))
 
-(defn mk-markov
+(defn mk-model
   "Makes a Markov model from a sequence of tokens."
   [tokens]
   (->> (partition 2 1 tokens)
@@ -26,11 +26,11 @@
   of token to cumulative probability. e.g.
 
   (cumulative-transitions {\"a\" 1/4
-                           \"b\" 1/2
-                           \"c\" 1/4})
+  \"b\" 1/2
+  \"c\" 1/4})
   => {\"a\" 1/4
-      \"b\" 3/4
-      \"c\" 4/4}"
+  \"b\" 3/4
+  \"c\" 4/4}"
   [model]
   (loop [trans (seq model)
          ctrans (sorted-map)
@@ -44,7 +44,7 @@
 
 (defn random-token
   "Selects a random token to given a cumulative transition map.  If you have
-  a normal transition map as created by mk-markov, you can create a cumulative
+  a normal transition map as created by mk-model, you can create a cumulative
   transition map from it by using cumulative-transitions."
   [ctrans]
   (let [r (rand)]
@@ -52,20 +52,25 @@
 
 (defn next-state
   "Selects a random state to transition to given a model (created through
-  mk-markov) and a current state."
+  mk-model) and a current state."
   [model current-state]
   (-> (get model current-state)
       cumulative-transitions
       random-token))
 
 (defn markov-chain
-  "Creates a random chain of tokens given a model (created through mk-markov) and
-  joins the tokens with the given separator."
-  [model sep]
+  "Creates a random chain of tokens given a model (created through mk-model)."
+  [model]
   (->> (iterate (partial next-state model) ":start")
        (take-while (partial not= ":end"))
-       (drop 1)
-       (s/join sep)))
+       (drop 1)))
+
+(defn fictitious-markov-chain-seq
+  "Creates a sequence of random chain of tokens given a model (created through
+  mk-model) that is not a member of the set real-chains."
+  [model real-chains]
+  (->> (repeatedly #(markov-chain model))
+       (filter (complement real-chains))))
 
 (defn chains
   "Returns a hash set of the original token chains represented by a stream of
@@ -74,25 +79,32 @@
   (->> tokens
        (remove (partial = ":start"))
        (partition-by (partial = ":end"))
-       (map (partial apply str))
        (remove (partial = ":end"))
        (apply hash-set)))
 
-(defn real-or-not [path sep n]
+(defn real-or-not [path n]
   (with-open [r (clojure.java.io/reader path)]
     (let [tokens (line-seq r)
-          existing-token? (chains tokens)
-          model (mk-markov tokens)
-          fakes (->> (repeatedly #(markov-chain model sep))
-                     (filter (complement existing-token?)))
-          fakes2 (->> (repeatedly #(markov-chain model sep))
-                      (filter (complement existing-token?)))]
+          real-chains (chains tokens)
+          model (mk-model tokens)
+          fakes (fictitious-markov-chain-seq model real-chains)
+          fakes2 (fictitious-markov-chain-seq model real-chains)]
       (->> (map (juxt (comp shuffle vector)
                       (fn [& args] (first args)))
-               (shuffle existing-token?)
+                (shuffle real-chains)
                 fakes
                 fakes2)
            (take n)))))
 
-(comment
-  (def class-name-tokens (line-seq (clojure.java.io/reader "class-names"))))
+(defn quiz-seq
+  [model real-chains]
+  (for [r  (shuffle real-chains)
+        f1 (fictitious-markov-chain-seq model real-chains)
+        f2 (fictitious-markov-chain-seq model real-chains)]
+    (shuffle [{:type "real" :value r}
+              {:type "fake" :value f1}
+              {:type "fake" :value f2}])))
+
+(defn quiz
+  [model real-chains]
+  (first (quiz-seq model real-chains)))
