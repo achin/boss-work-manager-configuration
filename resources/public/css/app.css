@@ -2,16 +2,14 @@
     margin-bottom: 1em;
 }
 
-.showAnswer .real .btn {
-    color: #fff;
-    background-color: #5cb85c;
-    border-color: #4cae4c;
-}
-
-.showAnswer .fake .btn {
-    color: #ccc;
+.choice button {
+    margin-right: 1em;
 }
 
 .score {
     float: right;
+}
+
+.inactive {
+    color: #ccc;
 }

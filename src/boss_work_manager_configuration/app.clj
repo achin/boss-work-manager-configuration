@@ -17,6 +17,8 @@
        :real-chains real-chains})))
 
 (defroutes main-routes
+  (GET "/" []
+    (response/resource-response "index.html" {:root "public"}))
   (GET "/quiz" {:as r}
     (response/response (markov/quiz (::model r)
                                     (::real-chains r))))

@@ -7,11 +7,30 @@ var app = app || {};
 
     var Choice = React.createClass({
         render: function () {
+            var buttonClass, glyphClass, labelClass;
+
+            if (this.props.showAnswer && this.props.type === "real") {
+                buttonClass = 'btn btn-default btn-success btn-lg value';
+                glyphClass = 'glyphicon glyphicon-ok';
+                labelClass = '';
+            } else if (this.props.showAnswer && this.props.type === "fake") {
+                buttonClass = 'btn btn-default btn-lg value';
+                glyphClass = 'glyphicon glyphicon-remove';
+                labelClass = 'inactive';
+            } else {
+                buttonClass = 'btn btn-default btn-lg value';
+                glyphClass = 'glyphicon glyphicon-star';
+                labelClass = '';
+            }
+
             return (
-                <div className={'choice ' + this.props.type}>
-                    <button className='btn btn-default btn-lg value'>
-                        {this.props.value}
-                    </button>
+                <div className='choice'>
+                    <h3>
+                        <button className={buttonClass}>
+                            <span className={glyphClass}></span>
+                        </button>
+                        <span className={labelClass}>{this.props.value}</span>
+                    </h3>
                 </div>
             );
         }
@@ -73,11 +92,11 @@ var app = app || {};
             var quiz = this;
 
             return (
-                <div className={this.state.showAnswer ? 'showAnswer' : 'hideAnswer'}>
+                <div>
                     {this.state.choices.map(function (c) {
                         return (
                             <form onSubmit={c.type === 'real' ? quiz.handleReal : quiz.handleFake} key={c.value}>
-                                <Choice value={c.value} type={c.type} />
+                                <Choice value={c.value} type={c.type} showAnswer={quiz.state.showAnswer}/>
                             </form>
                         );
                     })}
