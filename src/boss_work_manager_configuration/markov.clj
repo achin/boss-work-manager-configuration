@@ -1,26 +1,13 @@
-(def camel-seq
-  (partial re-seq #"(?:^[a-z]|[A-Z])[^A-Z]+|[A-Z]+$|[A-Z]{2,}(?=[A-Z])"))
+(ns boss-work-manager-configuration.markov)
 
-(defn write-lines [path lines]
-  (with-open [f (clojure.java.io/writer path)]
-    (doseq [l lines]
-      (.write f l)
-      (.newLine f))))
+(defn invalid-token-pair?
+  "Returns true if the given token pair ends with a start token or starts with
+  an end token."
+  [[a b]] (or (= ":start" b) (= ":end" a)))
 
-(defn tokenize-camel-symbols [coll]
-  (mapcat (comp #(concat [":start"] % [":end"])
-                camel-seq)
-          coll))
-
-(tokenize-camel-symbols (xpath/$x:text+ "//method/@name" xmldoc))
-
-(write-lines "descriptions" (map #(s/replace % #"[}.]" "") (filter #(.matches % "^[^{].*") (mapcat (comp #(concat [":start"] % [":end"]) #(s/split % #"\s+")) (xpath/$x:text+ "//comment/description" xmldoc)))))
-
-(def class-name-tokens (line-seq (clojure.java.io/reader "class-names")))
-
-(defn invalid-token-pair? [[a b]] (or (= ":start" b) (= ":end" a)))
-
-(defn mk-markov [tokens]
+(defn mk-markov
+  "Makes a Markov model from a sequence of tokens."
+  [tokens]
   (->> (partition 2 1 tokens)
        (remove invalid-token-pair?)
        (reduce (fn [m [a b]]
@@ -33,7 +20,17 @@
                            [w (/ k total)]))])))
        (into {})))
 
-(defn cumulative-transitions [trans]
+(defn cumulative-transitions
+  "Transforms a transition map from a map of token to probability to a map
+  of token to cumulative probability. e.g.
+
+  (cumulative-transitions {\"a\" 1/4
+                           \"b\" 1/2
+                           \"c\" 1/4})
+  => {\"a\" 1/4
+      \"b\" 3/4
+      \"c\" 4/4}"
+  [trans]
   (loop [trans (seq model)
          ctrans (sorted-map)
          total 0]
@@ -44,22 +41,35 @@
         (recur rtrans ctrans q)
         ctrans))))
 
-(defn random-transition [ctrans]
+(defn random-token
+  "Selects a random token to given a cumulative transition map.  If you have
+  a normal transition map as created by mk-markov, you can create a cumulative
+  transition map from it by using cumulative-transitions."
+  [ctrans]
   (let [r (rand)]
     (val (first (filter #(> (key %) r) ctrans)))))
 
-(defn next-state [model current-state]
+(defn next-state
+  "Selects a random state to transition to given a model (created through
+  mk-markov) and a current state."
+  [model current-state]
   (-> (get model current-state)
       cumulative-transitions
-      random-transition))
+      random-token))
 
-(defn markov-chain [model sep]
+(defn markov-chain
+  "Creates a random chain of tokens given a model (created through mk-markov) and
+  joins the tokens with the given separator."
+  [model sep]
   (->> (iterate (partial next-state model) ":start")
        (take-while (partial not= ":end"))
        (drop 1)
        (s/join sep)))
 
-(defn chains [tokens]
+(defn chains
+  "Returns a hash set of the original token chains represented by a stream of
+  tokens as ingested by boss-work-manager-configuration.ingest."
+  [tokens]
   (->> tokens
        (remove (partial = ":start"))
        (partition-by (partial = ":end"))
