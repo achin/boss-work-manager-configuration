@@ -8,4 +8,5 @@
                  [ring "1.2.2"]
                  [ring/ring-json "0.3.0"]
                  [compojure "1.1.6"]
-                 [com.github.kyleburton/clj-xpath "1.4.3"]])
+                 [com.github.kyleburton/clj-xpath "1.4.3"]]
+  :uberjar-name "boss-work-manager-configuration.jar")
