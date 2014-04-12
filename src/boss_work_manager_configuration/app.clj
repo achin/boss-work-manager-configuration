@@ -8,6 +8,7 @@
             [ring.util.response :as response]))
 
 (defn load-model
+  "Loads a token file and returns a Markov model using mk-model."
   [path]
   (with-open [r (io/reader path)]
     (let [tokens (line-seq r)
@@ -25,22 +26,32 @@
   (route/resources "/"))
 
 (defn wrap-data
+  "Adds arbitrary data to a Ring request map."
   [handler data-map]
   (fn [req]
     (handler (merge req data-map))))
 
 (defn web-app
+  "Creates a new web app using the given token file to populate a Markov model."
   [path]
   (let [{:keys [model real-chains]} (load-model path)]
     (-> main-routes
         json/wrap-json-response
         (wrap-data {::model model ::real-chains real-chains}))))
 
+(defn configure
+  "Configures a Jetty instance by setting graceful shutdown."
+  [jetty]
+  (.setGracefulShutdown jetty (* 60 1000))
+  (.setStopAtShutdown jetty true))
+
 (defn run-web-app
-  [port]
+  "Runs a webapp on the given port and joins with the current thread, if specified."
+  [port join?]
   (jetty/run-jetty (web-app "resources/class-names")
                    {:port port
-                    :join? false}))
+                    :join? join?
+                    :configurator configure}))
 
 (defn -main [port]
-  (run-web-app (Integer. port)))
+  (run-web-app (Integer. port) true))
