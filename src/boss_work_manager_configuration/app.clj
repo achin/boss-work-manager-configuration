@@ -42,7 +42,7 @@
 (defn configure
   "Configures a Jetty instance by setting graceful shutdown."
   [jetty]
-  (.setGracefulShutdown jetty (* 60 1000))
+  (.setGracefulShutdown jetty (* 5 1000))
   (.setStopAtShutdown jetty true))
 
 (defn run-web-app
