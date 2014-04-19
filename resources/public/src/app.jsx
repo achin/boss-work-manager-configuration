@@ -88,6 +88,13 @@ var app = app || {};
                 this.incScore(correct);
             }
         },
+        whenShowQuestion: function (s) {
+            if (!this.state.showAnswer) {
+                return s;
+            } else {
+                return '';
+            }
+        },
         render: function () {
             var quiz = this;
 
@@ -102,6 +109,11 @@ var app = app || {};
                     })}
 
                     <Score correct={this.state.correct} total={this.state.total} />
+
+                    <button className={'btn btn-primary btn-lg ' + this.whenShowQuestion('hidden')}
+                            onClick={this.refreshChoices}>
+                        Next
+                    </button>
                 </div>
             );
         }

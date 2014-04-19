@@ -13,3 +13,7 @@
 .inactive {
     color: #ccc;
 }
+
+.hidden {
+    display: none !important;
+}
